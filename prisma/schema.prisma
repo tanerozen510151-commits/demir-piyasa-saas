@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Enums are not natively supported in SQLite Prisma schemas.
+// We implement them as Strings with application-level validation.
+// 
+// enum CompanyRole {
+//   BUYER
+//   SELLER
+//   BOTH
+// }
+//
+// enum UserRole {
+//   SUPER_ADMIN
+//   OWNER
+//   SALES
+//   PROCUREMENT
+// }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  roleId    Int?     @default(1)
+  role      Role?    @relation(fields: [roleId], references: [id])
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId Int?
+}
+
+model Company {
+  id              Int      @id @default(autoincrement())
+  name            String
+  taxNumber       String
+  city            String
+  type            String   // seller, buyer
+  role            String   @default("BUYER")
+  membershipType  String   @default("BASIC")
+  membershipStart DateTime?
+  membershipEnd   DateTime?
+  isActive        Boolean  @default(true)
+  users           User[]
+  rfqs            RFQ[]
+  offers          Offer[]
+}
+
+model Product {
+  id        Int     @id @default(autoincrement())
+  name      String
+  category  String
+  unit      String
+  basePrice Float
+  currency  String  @default("TRY")
+  rfqs      RFQ[]
+}
+
+model RFQ {
+  id             Int      @id @default(autoincrement())
+  title          String
+  description    String?
+  quantity       Float
+  product        Product  @relation(fields: [productId], references: [id])
+  productId      Int
+  buyer          Company  @relation(fields: [buyerCompanyId], references: [id])
+  buyerCompanyId Int
+  status         String
+  createdAt      DateTime @default(now())
+  offers         Offer[]
+  orders         Order[]
+}
+
+model Offer {
+  id              Int      @id @default(autoincrement())
+  price           Float
+  note            String?
+  status          String   @default("pending")
+  rfqId           Int
+  rfq             RFQ      @relation(fields: [rfqId], references: [id])
+  sellerCompanyId Int
+  sellerCompany   Company  @relation(fields: [sellerCompanyId], references: [id])
+  createdAt       DateTime @default(now())
+  orders          Order[]
+}
+
+model Order {
+  id              Int      @id @default(autoincrement())
+  rfqId           Int
+  offerId         Int
+  buyerCompanyId  Int
+  sellerCompanyId Int
+  price           Float
+  quantity        Int
+  status          String   @default("pending") // pending | confirmed | shipped | completed | cancelled
+  createdAt       DateTime @default(now())
+
+  rfq   RFQ   @relation(fields: [rfqId], references: [id])
+  offer Offer @relation(fields: [offerId], references: [id])
+}
+
+model Role {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  permissions RolePermission[]
+  users       User[]
+}
+
+model Permission {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+
+  role        Role        @relation(fields: [roleId], references: [id])
+  permission  Permission  @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}

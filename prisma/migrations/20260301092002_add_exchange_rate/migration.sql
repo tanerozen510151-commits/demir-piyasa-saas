@@ -1,0 +1,7 @@
+-- CreateTable
+CREATE TABLE "ExchangeRate" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "currency" TEXT NOT NULL,
+    "rate" REAL NOT NULL,
+    "date" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
