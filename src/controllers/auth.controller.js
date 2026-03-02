@@ -64,7 +64,10 @@ const login = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { company: true },
+      include: {
+        role: true,
+        company: true
+      },
     });
 
     if (!user) {
@@ -85,9 +88,9 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       {
-        userId: user.id,
+        id: user.id,
+        role: user.role.name,
         companyId: user.companyId,
-        role: user.role,
       },
       secret,
       {
@@ -96,14 +99,14 @@ const login = async (req, res) => {
     );
 
     return res.status(200).json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        companyId: user.companyId,
+      id: user.id,
+      name: user.name,
+      role: user.role.name,
+      company: {
+        id: user.company.id,
+        name: user.company.name
       },
+      token: token
     });
   } catch (error) {
     console.error('Error during login', error);

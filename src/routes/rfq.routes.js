@@ -1,4 +1,6 @@
 const express = require('express');
+const { authenticate } = require('../middleware/auth.middleware');
+const { authorize } = require('../middleware/authorize.middleware');
 
 const {
   createRfqHandler,
@@ -9,7 +11,12 @@ const {
 
 const router = express.Router();
 
-router.post('/', createRfqHandler);
+router.post(
+  '/',
+  authenticate,
+  authorize('BUYER'),
+  createRfqHandler
+);
 router.get('/incoming', getIncomingHandler);
 router.get('/:rfqId/offers', getRfqOffersHandler);
 router.get('/:rfqId/comparison', getComparisonHandler);
